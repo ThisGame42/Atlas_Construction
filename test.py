@@ -1,13 +1,11 @@
 import os
 import glob
 import torch
-import torch.nn as nn
-import torchio as tio
 import torch.nn.functional as F
 import nibabel as nib
 import numpy as np
 
-from Loss.loss import compute_DSC
+from medpy import metric
 
 # nn.MSELoss()
 # img = nib.load("/media/jiayi/Data/Dataset/dixon_template/transformed_aug/0001_01_mdixon_r.nii.gz")
@@ -19,23 +17,28 @@ from Loss.loss import compute_DSC
 
 
 all_dsc = list()
+all_assd = list()
 
-# labels = sorted(glob.glob(os.path.join("/media/jiayi/Data/Dataset/dixon_template/transformed_label", "*.nii.gz")))
-# labels = [label for label in labels if "_r.nii.gz" in label]
-label_1 = nib.load("/media/jiayi/Data/Dataset/dixon_template/test_outputGAN/template_label_updated_0.nii.gz").get_fdata()
-label_1 = torch.from_numpy(label_1).to(torch.int64)
-label_2 = nib.load("/media/jiayi/Data/Dataset/dixon_template/template_view.nii.gz").get_fdata()
-label_2 = torch.from_numpy(label_2).to(torch.int64)
-print(torch.unique(torch.abs(label_1 - label_2)))
-label_2 = torch.unsqueeze(F.one_hot(label_2, num_classes=12).permute(3, 2, 0, 1), dim=0)
+labels = sorted(glob.glob(os.path.join("/media/jiayi/Data/Dataset/dixon_template/transformed_label", "*.nii.gz")))
+labels = [label for label in labels if "_r.nii.gz" in label]
+label_2 = nib.load("/media/jiayi/Data/Dataset/dixon_template/results/test_outputGAN/template_label_updated_15.nii.gz").get_fdata()
+label_2 = torch.unsqueeze(F.one_hot(torch.from_numpy(label_2).to(torch.int64), num_classes=12).permute(3, 2, 0, 1), dim=0)
 
-# for label in labels:
-#     label_1 = nib.load(label).get_fdata()
-#     label_1 = torch.from_numpy(label_1).to(torch.int64)
-#     label_1 = torch.unsqueeze(F.one_hot(label_1, num_classes=12).permute(3, 2, 0, 1), dim=0)
-#
-#     dsc = compute_DSC(label_2, label_1, ignore_check=True)
-#     all_dsc.append(dsc.numpy())
-# avg_dsc = np.mean(np.array(all_dsc), axis=0)
-# for i, d in enumerate(avg_dsc):
-#     print(f"The DSC for class {i} is {d: .3f}")
+for label in labels:
+    label_1 = nib.load(label).get_fdata()
+    label_1 = torch.from_numpy(label_1).to(torch.int64)
+    label_1 = torch.unsqueeze(F.one_hot(label_1, num_classes=12).permute(3, 2, 0, 1), dim=0)
+    dsc, assd = list(), list()
+    for i in range(12):
+        d_score = metric.dc(label_2[:, i, ...].numpy(), label_1[:, i, ...].numpy())
+        assd_score = metric.assd(label_2[:, i, ...].numpy(), label_1[:, i, ...].numpy(), voxelspacing=1)
+        dsc.append(d_score)
+        assd.append(assd_score)
+    all_dsc.append(np.array(dsc))
+    all_assd.append(np.array(assd))
+avg_dsc = np.mean(np.array(all_dsc), axis=0)
+avg_assd = np.mean(np.array(all_assd), axis=0)
+for i, (d, a) in enumerate(zip(avg_dsc, avg_assd)):
+    print(f"The DSC for class {i} is {d: .3f}")
+    print(f"The ASSD for class {i} is {a: .3f}")
+    print()

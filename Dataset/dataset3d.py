@@ -47,6 +47,8 @@ class Dataset3D(Dataset):
         template_label = tio.Subject(label=tio.ScalarImage(tensor=read_n_permute(template_file_label)))
         self.template_label = template_label["label"].data.permute(0, 3, 1, 2).clone()
         self.template_label_affine = nib.load(template_file_label).affine
+        self.img_test = list()
+        self.label_test = list()
         for idx, (mdixon, m_labels) in enumerate(zip(mdixon_files, mdixon_labels)):
             if for_alignment:
                 if "_r.nii.gz" not in mdixon:
@@ -69,7 +71,8 @@ class Dataset3D(Dataset):
                 self.data.append([(start_idx, end_idx),
                                   m_data,
                                   m_label,
-                                  mdixon])
+                                  mdixon,
+                                  m_labels])
             if "_r.nii.gz" in mdixon and not for_alignment:
                 for i in range(self.num_slices // 2, 512, self.num_slices):
                     start_idx = i
@@ -97,7 +100,7 @@ class Dataset3D(Dataset):
         return self.mdixon_files
 
     def __getitem__(self, idx):
-        (start_idx, end_idx), fixed_img, fixed_labels, mdixon_name = self.data[idx]
+        (start_idx, end_idx), fixed_img, fixed_labels, mdixon_name, label_name = self.data[idx]
         moving_atlas, moving_atlas_label = self.get_sub_template(start_idx, end_idx)
         binary_labels = fixed_labels.clone()
         binary_labels[binary_labels != 0] = 1
@@ -113,6 +116,7 @@ class Dataset3D(Dataset):
             "moving_atlas_label": moving_atlas_label.to(torch.float32),
             "fixed_labels": fixed_labels.to(torch.float32),
             "mdixon_name": mdixon_name,
+            "label_name": label_name,
             "indices": (start_idx, end_idx),
             "binary_labels": binary_labels.to(torch.float32)
         }
@@ -127,6 +131,31 @@ class Dataset3D(Dataset):
                 whole_img[:, start_idx:end_idx] = self.sub_img[i]
             self.whole_img.append(whole_img)
             self.sub_img.clear()
+
+    def insert_test_img(self, sub_img):
+        self.img_test.append(sub_img.detach().cpu().numpy())
+        if len(self.img_test) == self.num_sub_volumes:
+            whole_img = np.zeros((4, 512, 240, 240))
+            for i in range(self.num_sub_volumes):
+                start_idx = i * self.num_slices
+                end_idx = (i + 1) * self.num_slices
+                whole_img[:, start_idx:end_idx] = self.img_test[i]
+            whole_img = self.rescale(tio.Subject(
+                image=tio.ScalarImage(tensor=torch.from_numpy(whole_img))
+            ))["image"].data
+            return whole_img.numpy()
+        return False
+
+    def insert_test_label(self, sub_label):
+        self.label_test.append(sub_label.detach().cpu().numpy())
+        if len(self.label_test) == self.num_sub_volumes:
+            whole_label = np.zeros((12, 512, 240, 240))
+            for i in range(self.num_sub_volumes):
+                start_idx = i * self.num_slices
+                end_idx = (i + 1) * self.num_slices
+                whole_label[:, start_idx:end_idx, ...] = np.squeeze(self.sub_label[i], axis=0)
+            return whole_label
+        return False
 
     def insert_warped_label(self, sub_label):
         self.sub_label.append(sub_label.detach().cpu().numpy())

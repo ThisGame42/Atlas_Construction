@@ -26,8 +26,8 @@ class Trainer(object):
         self.intensity_lossfn = intensity_lossfn
         self.dice_lossfn = dice_lossfn
         self.grad_loss = grad_loss
-        # self.loader_t = loader_t
-        # self.loader_v = loader_v
+        self.loader_t = loader_t
+        self.loader_v = loader_v
         self.loader_seq = loader_seq
         self.dataset_seq = dataset_seq
         self.device = device
