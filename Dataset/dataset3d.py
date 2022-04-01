@@ -149,7 +149,7 @@ class Dataset3D(Dataset):
     def insert_test_label(self, sub_label):
         self.label_test.append(sub_label.detach().cpu().numpy())
         if len(self.label_test) == self.num_sub_volumes:
-            whole_label = np.zeros((12, 512, 240, 240))
+            whole_label = np.zeros((4, 512, 240, 240))
             for i in range(self.num_sub_volumes):
                 start_idx = i * self.num_slices
                 end_idx = (i + 1) * self.num_slices

@@ -28,3 +28,6 @@ modelG = VxmDenseV3(3, ndims_c=4, inshape=(64, 240, 240),
                    ], bidir=True).cuda()
 tester = Tester(netG=modelG, output_path=output_path, loader_t=loader_t,
                 dataset_t=dataset_t, device="cuda:0")
+
+tester.test_run()
+tester.save_results()
