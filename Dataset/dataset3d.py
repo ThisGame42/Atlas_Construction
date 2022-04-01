@@ -134,12 +134,15 @@ class Dataset3D(Dataset):
 
     def insert_test_img(self, sub_img):
         self.img_test.append(sub_img.detach().cpu().numpy())
+        print("Inserted an image.")
         if len(self.img_test) == self.num_sub_volumes:
+            print("Collected enough sub-images. Putting them together to build a whole image.")
             whole_img = np.zeros((4, 512, 240, 240))
             for i in range(self.num_sub_volumes):
                 start_idx = i * self.num_slices
                 end_idx = (i + 1) * self.num_slices
                 whole_img[:, start_idx:end_idx] = self.img_test[i]
+                print(f"\tThe size of sub_img is {self.img_test[i].shape}")
             whole_img = self.rescale(tio.Subject(
                 image=tio.ScalarImage(tensor=torch.from_numpy(whole_img))
             ))["image"].data
@@ -148,12 +151,15 @@ class Dataset3D(Dataset):
 
     def insert_test_label(self, sub_label):
         self.label_test.append(sub_label.detach().cpu().numpy())
+        print("Inserted a label.")
         if len(self.label_test) == self.num_sub_volumes:
+            print("Collected enough sub-labels. Putting them together to build a whole label.")
             whole_label = np.zeros((4, 512, 240, 240))
             for i in range(self.num_sub_volumes):
                 start_idx = i * self.num_slices
                 end_idx = (i + 1) * self.num_slices
                 whole_label[:, start_idx:end_idx, ...] = np.squeeze(self.sub_label[i], axis=0)
+                print(f"\tThe size of sub_label is {np.squeeze(self.sub_label[i], axis=0).shape}")
             return whole_label
         return False
 
