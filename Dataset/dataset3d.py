@@ -25,8 +25,8 @@ class Dataset3D(Dataset):
                  img_path,
                  label_path,
                  num_classes=12,
-                 for_alignment=False,
-                 num_slices=64):
+                 for_alignment=True,
+                 num_slices=128):
         mdixon_files = load_from_f(img_path)
         mdixon_labels = load_from_f(label_path)
         self.mdixon_files = mdixon_files
@@ -83,7 +83,8 @@ class Dataset3D(Dataset):
                         self.data.append([(start_idx, end_idx),
                                           m_data,
                                           m_label,
-                                          mdixon])
+                                          mdixon,
+                                          m_labels])
 
     def get_sub_template(self, start_idx, end_idx):
         sub_template = torch.squeeze(self.template[..., start_idx:end_idx], dim=0)
@@ -146,6 +147,7 @@ class Dataset3D(Dataset):
             whole_img = self.rescale(tio.Subject(
                 image=tio.ScalarImage(tensor=torch.from_numpy(whole_img))
             ))["image"].data
+            self.img_test.clear()
             return whole_img.numpy()
         return False
 
@@ -154,13 +156,16 @@ class Dataset3D(Dataset):
         print("Inserted a label.")
         if len(self.label_test) == self.num_sub_volumes:
             print("Collected enough sub-labels. Putting them together to build a whole label.")
-            whole_label = np.zeros((4, 512, 240, 240))
+            whole_label = torch.zeros((12, 512, 240, 240))
             for i in range(self.num_sub_volumes):
                 start_idx = i * self.num_slices
                 end_idx = (i + 1) * self.num_slices
-                whole_label[:, start_idx:end_idx, ...] = np.squeeze(self.sub_label[i], axis=0)
-                print(f"\tThe size of sub_label is {np.squeeze(self.sub_label[i], axis=0).shape}")
-            return whole_label
+                whole_label[:, start_idx:end_idx, ...] = torch.from_numpy(np.squeeze(self.label_test[i], axis=0))
+                print(f"\tThe size of sub_label is {np.squeeze(self.label_test[i], axis=0).shape}")
+            whole_label = F.one_hot(torch.argmax(whole_label, dim=0).to(torch.int64),
+                                    num_classes=12).permute(3, 0, 1, 2)
+            self.label_test.clear()
+            return whole_label.numpy()
         return False
 
     def insert_warped_label(self, sub_label):

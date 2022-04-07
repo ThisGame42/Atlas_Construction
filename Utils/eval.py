@@ -15,7 +15,9 @@ def eval(pred_img, pred_label, ref_img, ref_label):
 
 
 def eval_results_imgs(pred, ref):
-    return ssim(pred, ref), psnr(pred, ref)
+    pred = np.transpose(pred, (1, 2, 3, 0))
+    ref = np.transpose(ref, (1, 2, 3, 0))
+    return ssim(pred, ref, multichannel=True), psnr(pred, ref)
 
 
 def eval_results_labels(pred: np.ndarray, ref: np.ndarray):

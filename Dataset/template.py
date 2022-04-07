@@ -23,13 +23,13 @@ def produce_template(img_path, template_path, output_path, linear_path, warp_dir
     cmd = ["population_template", img_path, template_path,
            "-voxel_size", "1,1,1", "-initial_alignment", "mass", "-leave_one_out", "1",
            "-force", "-linear_transformations_dir", linear_path, "-transformed_dir", output_path,
-           "-type", "rigid_affine", "-nthreads", "16", "-linear_no_pause"] #"-warp_dir", warp_dir]
+           "-type", "affine", "-nthreads", "32", "-linear_no_pause"] #"-warp_dir", warp_dir]
     subprocess.run(cmd)
 
 
 if __name__ == "__main__":
-    produce_template("/media/jiayi/Data/Dataset/dixon_template/dixon_img",
-                     "/media/jiayi/Data/Dataset/dixon_template/template_img.nii.gz",
-                     "/media/jiayi/Data/Dataset/dixon_template/transformed",
-                     "/media/jiayi/Data/Dataset/dixon_template/linear_trans",
-                     "/media/jiayi/Data/Dataset/dixon_template/linear_warp")
+    produce_template("/Users/jz/Code/data/dixon_img",
+                     "/Users/jz/Code/data/new_template/template_img.nii.gz",
+                     "/Users/jz/Code/data/transformed",
+                     "/Users/jz/Code/data/linear_trans",
+                     "/Users/jz/Code/data/linear_warp")
