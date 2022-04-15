@@ -452,7 +452,12 @@ def plot_loss_multiple(loss_t,
     plt.close()
 
 
-def plot_loss_one(angle_v,
+def plot_loss_few(loss_t,
+                  loss_v,
+                  seg_t,
+                  seg_v,
+                  flow_t,
+                  flow_v,
                   num_epochs,
                   path_plot):
     x_ticks = np.arange(1, num_epochs + 1, 1)
@@ -460,7 +465,12 @@ def plot_loss_one(angle_v,
     plt.title("Loss Values")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
-    plt.plot(x_ticks, angle_v, label="Angle loss (Validation)")
+    plt.plot(x_ticks, loss_t, label="Loss (training)")
+    plt.plot(x_ticks, loss_v, label="Loss (val)")
+    plt.plot(x_ticks, seg_t, label="Dice (training)")
+    plt.plot(x_ticks, seg_v, label="Dice (val)")
+    plt.plot(x_ticks, flow_t, label="Flow (training)")
+    plt.plot(x_ticks, flow_v, label="Flow (val)")
     plt.legend()
     plt.savefig(path_plot)
     plt.close()

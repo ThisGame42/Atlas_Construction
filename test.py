@@ -1,44 +1,42 @@
-import os
-import glob
-import torch
-import torch.nn.functional as F
-import nibabel as nib
-import numpy as np
+from Utils.eval import *
 
-from medpy import metric
+# eval_results("/Users/jz/Code/data/Warped_pairs",
+#              ref_img_path="/Users/jz/Code/data/results/transformed",
+#              ref_label_path="/Users/jz/Code/data/results/transformed_labels",
+#              output_path="/Users/jz/Code/data/Warped_pairs/")
 
-# nn.MSELoss()
-# img = nib.load("/media/jiayi/Data/Dataset/dixon_template/transformed_aug/0001_01_mdixon_r.nii.gz")
-# data = torch.from_numpy(img.get_fdata()).permute(3, 0, 1, 2)
-# rescale = tio.RescaleIntensity(out_min_max=(-1, 1))
-# data = rescale(tio.Subject(image=tio.ScalarImage(tensor=data)))["image"].data.permute(1, 2, 3, 0).numpy()
-# nib.save(nib.Nifti1Image(data, img.affine),
-#          "/media/jiayi/Data/Dataset/dixon_template/test.nii.gz")
+import json
 
+file = "/Users/jz/Code/data/Revised_data/registration_affine/label_results.json"
+with open(file, 'r') as f:
+   label_results: dict = json.load(f)
+print(f"Loading {file}")
 
-all_dsc = list()
-all_assd = list()
+assd_list = list()
+dsc_list = list()
+verror_list = list()
 
-labels = sorted(glob.glob(os.path.join("/media/jiayi/Data/Dataset/dixon_template/transformed_label", "*.nii.gz")))
-labels = [label for label in labels if "_r.nii.gz" in label]
-label_2 = nib.load("/media/jiayi/Data/Dataset/dixon_template/results/test_outputGAN/template_label_updated_15.nii.gz").get_fdata()
-label_2 = torch.unsqueeze(F.one_hot(torch.from_numpy(label_2).to(torch.int64), num_classes=12).permute(3, 2, 0, 1), dim=0)
+for k, v in label_results.items():
+    assd_list.append(
+        [float(assd) for assd in v["assd"]]
+    )
+    dsc_list.append(
+        [float(dsc) for dsc in v["dsc"]]
+    )
+    verror_list.append(
+        [float(verror) for verror in v["verror"]]
+    )
 
-for label in labels:
-    label_1 = nib.load(label).get_fdata()
-    label_1 = torch.from_numpy(label_1).to(torch.int64)
-    label_1 = torch.unsqueeze(F.one_hot(label_1, num_classes=12).permute(3, 2, 0, 1), dim=0)
-    dsc, assd = list(), list()
-    for i in range(12):
-        d_score = metric.dc(label_2[:, i, ...].numpy(), label_1[:, i, ...].numpy())
-        assd_score = metric.assd(label_2[:, i, ...].numpy(), label_1[:, i, ...].numpy(), voxelspacing=1)
-        dsc.append(d_score)
-        assd.append(assd_score)
-    all_dsc.append(np.array(dsc))
-    all_assd.append(np.array(assd))
-avg_dsc = np.mean(np.array(all_dsc), axis=0)
-avg_assd = np.mean(np.array(all_assd), axis=0)
-for i, (d, a) in enumerate(zip(avg_dsc, avg_assd)):
-    print(f"The DSC for class {i} is {d: .3f}")
-    print(f"The ASSD for class {i} is {a: .3f}")
+mean_assd = np.mean(np.array(assd_list), axis=0)
+mean_dsc = np.mean(np.array(dsc_list), axis=0)
+mean_verror = np.mean(np.array(verror_list), axis=0)
+
+for i in range(1, 12):
+    print(f"The average DSC for class {i} is {mean_dsc[i]}")
+    print(f"The average ASSD for class {i} is {mean_assd[i]}")
+    print(f"The average VError for class {i} is {mean_verror[i]}")
     print()
+
+print(f"The overall average ASSD is {np.mean(mean_assd)}")
+print(f"The overall average DSC is {np.mean(mean_dsc)}")
+print(f"The overall average VError is {np.mean(mean_verror)}")

@@ -26,10 +26,11 @@ class Tester(object):
                                                                     batch_data["fixed_img"].to(self.device), \
                                                                     batch_data["moving_atlas_label"].to(self.device), \
                                                                     batch_data["fixed_labels"].to(self.device)
-        results = self.netG(moving_img=moving_atlas,
-                            fixed_img=fixed_img,
-                            moving_label=moving_atlas_label,
-                            fixed_label=fixed_labels)
+        with torch.no_grad():
+            results = self.netG(moving_img=moving_atlas,
+                                fixed_img=fixed_img,
+                                moving_label=moving_atlas_label,
+                                fixed_label=fixed_labels)
         return results
 
     def test_generator_one_step(self, batch_data):

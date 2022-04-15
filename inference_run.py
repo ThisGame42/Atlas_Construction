@@ -24,8 +24,8 @@ modelG = VxmDenseV3(3, ndims_c=4, inshape=(128, 240, 240),
                        [32, 32, 32, 32],
                        [32, 32, 32, 32, 32, 16],
                    ], bidir=True).cuda()
+modelG.load_state_dict(torch.load(f"{path_prefix}/test_outputExp/VxmDenseV3_kcv_epoch_40_0.pth"))
 tester = Tester(netG=modelG, output_path=output_path, loader_t=loader_t,
                 dataset_t=dataset_t, device=device)
-modelG.load_state_dict(torch.load(f"{path_prefix}/test_outputExp/VxmDenseV3_kcv_epoch_40_0.pth"))
 tester.test_run()
 tester.save_results()

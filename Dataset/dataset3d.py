@@ -94,17 +94,12 @@ class Dataset3D(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def get_num_files(self):
-        return self.num_files
-
     def get_files(self):
         return self.mdixon_files
 
     def __getitem__(self, idx):
         (start_idx, end_idx), fixed_img, fixed_labels, mdixon_name, label_name = self.data[idx]
         moving_atlas, moving_atlas_label = self.get_sub_template(start_idx, end_idx)
-        binary_labels = fixed_labels.clone()
-        binary_labels[binary_labels != 0] = 1
         fixed_labels = F.one_hot(torch.squeeze(fixed_labels.to(torch.int64), dim=0),
                                  num_classes=12)
         fixed_labels = fixed_labels.permute(3, 2, 0, 1)
@@ -119,7 +114,6 @@ class Dataset3D(Dataset):
             "mdixon_name": mdixon_name,
             "label_name": label_name,
             "indices": (start_idx, end_idx),
-            "binary_labels": binary_labels.to(torch.float32)
         }
 
     def insert_warped_img(self, sub_img):
